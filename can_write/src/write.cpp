@@ -4,6 +4,7 @@
 
 // DO NOT MAKE AN ID  = 0
 #define ID1 0xF0
+//#define ID1 0xCD
 
 #define SENSOR PA_7
 
@@ -23,8 +24,10 @@ int main()
     msg.len = 8;
     int counter = 0; // to count number of readings
     int reading = 0;
-    unsigned char data[8] = {0};
-
+    uint8_t data[8] = {0};
+    sender.filter(0xCD,0xff);
+    //sender.filter(0xF0,0xff);
+    
     while(1){
         reading = 3300*sensor.read(); // Sensor data; 2 byte number [0 5000]
 
