@@ -7,7 +7,8 @@
 #define ID2 0xCD
 #define ID3 0x539
 
-#define SENSOR PA_7
+#define S1 PA_7
+#define S2 PA_8
 
 //Bluepill on small board - 0xF0
 //Bluepill on big board near power - 0xCD
@@ -18,7 +19,8 @@ void readMsg();
 void handleMsg(int, uint16_t*);
 
 DigitalOut led(LED1);
-AnalogIn sensor(SENSOR);
+AnalogIn s1(S1);
+AnalogIn s2(S2);
 
 Serial pc(PA_9,PA_10);
 CAN sender(PB_8, PB_9);
@@ -30,20 +32,27 @@ int main()
 {
     CANMessage msg(ID1);
     int counter = 0; // to count number of readings
-    int reading = 0;
+    int reading1 = 0;
+    int reading2 = 0;
     uint8_t data[8] = {0};
+
     sender.filter(ID2,0xff);
-    
     sender.attach(readMsg);
     
     while(1){
-        reading = 3300*sensor.read(); // Sensor data; 2 byte number [0 5000]
 
-        data[2*counter] = reading>>8 & 0xFF; //0x1234 >> 8 = 0x12; 0x12 & 0xFF = 0x12 
-        data[2*counter+1] = reading & 0xFF;    // 0x1234 & 0xFF = 0x34
+        // Sensor data; 2 byte numbers [0 5000]
+        reading1 = 3300*s1.read();
+        reading2 = 3300*s2.read(); 
+
+        data[2*counter] = reading1>>8 & 0xFF; //0x1234 >> 8 = 0x12; 0x12 & 0xFF = 0x12 
+        data[2*counter+1] = reading1 & 0xFF;    // 0x1234 & 0xFF = 0x34
+
+        data[2*counter + 2] = reading2>>8 & 0xFF; 
+        data[2*counter + 3] = reading2 & 0xFF;  
 
         counter += 1;
-        if(counter == 4){ // once we have 4 x 2byte readings, send the message
+        if(counter == 2){ // once we have 4 x 2byte readings, send the message. DEPENDS ON NUMBER OF SENSORS (stop at counter == 4/N)
             if (sender.write(CANMessage(ID1,data,8))) {
                 led = !led;
                 pc.printf("Sent msg1. ID: %x\n",ID1);
